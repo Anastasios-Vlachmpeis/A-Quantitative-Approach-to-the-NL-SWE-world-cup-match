@@ -130,15 +130,16 @@ def figure_path(name: str) -> Path:
     return _FIGURES_ROOT / name
 
 
-def save_figure(fig: plt.Figure, name: str) -> tuple[Path, Path]:
-    """Save figure as PNG and SVG."""
+def save_figure(fig: plt.Figure, name: str) -> Path:
+    """Save figure as PNG. (SVG generation disabled for now.)"""
+    from nlvswe.plotting.theme import THEME
+
     base = figure_path(name)
     png_path = base.with_suffix(".png")
-    svg_path = base.with_suffix(".svg")
-    fig.savefig(png_path, bbox_inches="tight", dpi=150)
-    fig.savefig(svg_path, bbox_inches="tight")
-    logger.info("Saved figure -> %s, %s", png_path, svg_path)
-    return png_path, svg_path
+    save_kw = {"bbox_inches": "tight", "facecolor": THEME.bg, "edgecolor": THEME.bg}
+    fig.savefig(png_path, dpi=150, **save_kw)
+    logger.info("Saved figure -> %s", png_path)
+    return png_path
 
 
 def write_raw_artifact(

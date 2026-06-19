@@ -62,6 +62,17 @@ pytest tests/test_clean.py
 
 Outputs land in `data/interim/` with manifests; see `data/interim/VALIDATION.md`.
 
+## Feature engineering (Plan 04)
+
+Build point-in-time, leakage-safe features for international matches:
+
+```bash
+python -m nlvswe.features.build
+pytest tests/test_features.py
+```
+
+Outputs: `data/processed/features.parquet`, `data/processed/FEATURES.md`, `reports/figures/eda_feat_*`.
+
 ## Layout
 
 ```
