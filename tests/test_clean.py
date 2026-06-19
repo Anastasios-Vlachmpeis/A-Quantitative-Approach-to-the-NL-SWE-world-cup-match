@@ -9,7 +9,7 @@ import pandas as pd
 import pytest
 from pandera.errors import SchemaError
 
-from nlvswe.data.clean import flag_is_closing, make_match_id
+from nlvswe.data.clean import CORPUS_CLUB, CORPUS_INTERNATIONAL, flag_is_closing, make_match_id
 from nlvswe.data.entities import EntityResolver, UnresolvedEntityError
 from nlvswe.schemas import ODDS_SCHEMA, validate_table
 
@@ -52,6 +52,7 @@ def test_is_closing_logic():
                 "decimal_odds": 2.0,
                 "captured_at": pd.Timestamp("2026-06-15T10:00:00", tz="UTC"),
                 "is_closing": False,
+                "corpus": CORPUS_INTERNATIONAL,
             },
             {
                 "match_id": match_id,
@@ -61,6 +62,7 @@ def test_is_closing_logic():
                 "decimal_odds": 1.95,
                 "captured_at": pd.Timestamp("2026-06-15T16:00:00", tz="UTC"),
                 "is_closing": False,
+                "corpus": CORPUS_INTERNATIONAL,
             },
             {
                 "match_id": match_id,
@@ -70,6 +72,7 @@ def test_is_closing_logic():
                 "decimal_odds": 1.90,
                 "captured_at": pd.Timestamp("2026-06-15T19:00:00", tz="UTC"),
                 "is_closing": False,
+                "corpus": CORPUS_INTERNATIONAL,
             },
         ]
     )
@@ -88,6 +91,7 @@ def test_pandera_rejects_bad_odds():
                 "match_id": "m1",
                 "bookmaker": "bk",
                 "market": "1x2",
+                "corpus": CORPUS_CLUB,
                 "selection": "home",
                 "decimal_odds": 0.5,
                 "captured_at": pd.Timestamp("2026-01-01", tz="UTC"),
@@ -107,6 +111,7 @@ def test_pandera_rejects_negative_goals():
             {
                 "match_id": "m1",
                 "date_utc": pd.Timestamp("2026-01-01", tz="UTC"),
+                "corpus": CORPUS_INTERNATIONAL,
                 "competition": "Friendly",
                 "season": "2026",
                 "stage": None,
@@ -141,3 +146,27 @@ def test_target_match_in_canonical():
     ]
     assert len(target) >= 1
     assert (target["status"] == "scheduled").any() or (target["competition"].str.contains("World Cup")).any()
+    assert (target["corpus"] == CORPUS_INTERNATIONAL).all()
+
+
+@pytest.mark.skipif(
+    not Path("data/interim/matches.parquet").exists(),
+    reason="requires clean run",
+)
+def test_corpus_discriminator():
+    import re
+
+    matches = pd.read_parquet("data/interim/matches.parquet")
+    odds = pd.read_parquet("data/interim/odds.parquet")
+    ratings = pd.read_parquet("data/interim/ratings.parquet")
+    club_comp_re = re.compile(r"^[A-Z0-9]+_\d{4}$")
+
+    for name, df in (("matches", matches), ("odds", odds), ("ratings", ratings)):
+        assert "corpus" in df.columns, f"{name} missing corpus"
+        assert df["corpus"].notna().all(), f"{name} has null corpus"
+        assert set(df["corpus"].unique()).issubset({CORPUS_INTERNATIONAL, CORPUS_CLUB})
+
+    intl = matches[matches["corpus"] == CORPUS_INTERNATIONAL]
+    assert not intl["competition"].astype(str).str.match(club_comp_re, na=False).any()
+    assert (odds["corpus"] == CORPUS_CLUB).any()
+    assert (ratings["corpus"] == CORPUS_INTERNATIONAL).all()

@@ -12,6 +12,8 @@ if TYPE_CHECKING:
 
 SCHEMA_REGISTRY: dict[str, pa.DataFrameSchema] = {}
 
+CORPUS_CHECK = Check.isin(["international", "club"])
+
 TEAMS_SCHEMA = pa.DataFrameSchema(
     {
         "team_id": pa.Column(str, unique=True, nullable=False),
@@ -43,6 +45,7 @@ MATCHES_SCHEMA = pa.DataFrameSchema(
     {
         "match_id": pa.Column(str, unique=True, nullable=False),
         "date_utc": pa.Column("datetime64[ns, UTC]", nullable=False),
+        "corpus": pa.Column(str, CORPUS_CHECK, nullable=False),
         "competition": pa.Column(str, nullable=False),
         "season": pa.Column(str, nullable=True, required=False),
         "stage": pa.Column(str, nullable=True, required=False),
@@ -64,6 +67,7 @@ RATINGS_SCHEMA = pa.DataFrameSchema(
         "team_id": pa.Column(str, nullable=False),
         "rating_date": pa.Column("datetime64[ns, UTC]", nullable=False),
         "source": pa.Column(str, Check.isin(["fifa", "elo"]), nullable=False),
+        "corpus": pa.Column(str, CORPUS_CHECK, nullable=False),
         "value": pa.Column(float, nullable=False),
         "rank": pa.Column("Int64", nullable=True, required=False),
     },
@@ -88,6 +92,7 @@ ODDS_SCHEMA = pa.DataFrameSchema(
         "match_id": pa.Column(str, nullable=False),
         "bookmaker": pa.Column(str, nullable=False),
         "market": pa.Column(str, Check.isin(["1x2", "totals", "ah"]), nullable=False),
+        "corpus": pa.Column(str, CORPUS_CHECK, nullable=False),
         "selection": pa.Column(str, nullable=False),
         "decimal_odds": pa.Column(float, Check.gt(1.0), nullable=False),
         "captured_at": pa.Column("datetime64[ns, UTC]", nullable=False),
@@ -136,11 +141,51 @@ def validate_table(df: pd.DataFrame, schema_name: str) -> pd.DataFrame:
     return SCHEMA_REGISTRY[schema_name].validate(df)
 
 
-def validate_business_rules(matches: pd.DataFrame, odds: pd.DataFrame) -> list[str]:
+def validate_business_rules(
+    matches: pd.DataFrame,
+    odds: pd.DataFrame,
+    ratings: pd.DataFrame | None = None,
+    *,
+    expected_intl_match_count: int | None = None,
+) -> list[str]:
     """Return list of business-rule violations (empty = pass)."""
-    issues: list[str] = []
+    import re
 
-    if not matches.empty:
+    issues: list[str] = []
+    valid_corpus = {"international", "club"}
+    club_comp_re = re.compile(r"^[A-Z0-9]+_\d{4}$")
+
+    for table_name, df in (
+        ("matches", matches),
+        ("odds", odds),
+        ("ratings", ratings if ratings is not None else pd.DataFrame()),
+    ):
+        if df.empty:
+            continue
+        if "corpus" not in df.columns:
+            issues.append(f"{table_name}: missing corpus column")
+            continue
+        if df["corpus"].isna().any():
+            issues.append(f"{table_name}: corpus has null values")
+        invalid = set(df["corpus"].unique()) - valid_corpus
+        if invalid:
+            issues.append(f"{table_name}: invalid corpus values {invalid}")
+
+    if not matches.empty and "corpus" in matches.columns:
+        intl = matches[matches["corpus"] == "international"]
+        club_in_intl = intl["competition"].astype(str).str.match(club_comp_re, na=False)
+        if club_in_intl.any():
+            issues.append(
+                f"matches: {int(club_in_intl.sum())} international corpus rows with club competition codes"
+            )
+        if expected_intl_match_count is not None:
+            intl_completed = intl[intl["status"] == "completed"]
+            if len(intl_completed) != expected_intl_match_count:
+                issues.append(
+                    f"matches: international completed count {len(intl_completed)} "
+                    f"!= raw results source {expected_intl_match_count}"
+                )
+
         self_play = matches[matches["home_team_id"] == matches["away_team_id"]]
         if len(self_play):
             issues.append(f"matches: {len(self_play)} rows with home_team_id == away_team_id")
