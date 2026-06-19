@@ -172,6 +172,34 @@ FEATURES_SCHEMA = pa.DataFrameSchema(
     name="features",
 )
 
+PREDICTIONS_SCHEMA = pa.DataFrameSchema(
+    {
+        "match_id": pa.Column(str, nullable=False),
+        "model": pa.Column(str, nullable=False),
+        "date_utc": pa.Column("datetime64[ns, UTC]", nullable=False),
+        "p_home": pa.Column(float, Check.in_range(0.0, 1.0), nullable=False),
+        "p_draw": pa.Column(float, Check.in_range(0.0, 1.0), nullable=False),
+        "p_away": pa.Column(float, Check.in_range(0.0, 1.0), nullable=False),
+        "outcome": pa.Column(str, Check.isin(["home", "draw", "away"]), nullable=False),
+        "has_scoreline": pa.Column(bool, nullable=False),
+    },
+    strict=True,
+    name="predictions",
+)
+
+EVAL_SCORES_SCHEMA = pa.DataFrameSchema(
+    {
+        "model": pa.Column(str, nullable=False),
+        "metric": pa.Column(str, Check.isin(["rps", "log_loss", "brier"]), nullable=False),
+        "mean": pa.Column(float, nullable=False),
+        "ci_low": pa.Column(float, nullable=False),
+        "ci_high": pa.Column(float, nullable=False),
+        "n": pa.Column("Int64", Check.ge(1), nullable=False),
+    },
+    strict=True,
+    name="eval_scores",
+)
+
 CANONICAL_SCHEMAS: dict[str, pa.DataFrameSchema] = {
     "teams": TEAMS_SCHEMA,
     "venues": VENUES_SCHEMA,
@@ -181,6 +209,8 @@ CANONICAL_SCHEMAS: dict[str, pa.DataFrameSchema] = {
     "odds": ODDS_SCHEMA,
     "conditions": CONDITIONS_SCHEMA,
     "features": FEATURES_SCHEMA,
+    "predictions": PREDICTIONS_SCHEMA,
+    "eval_scores": EVAL_SCORES_SCHEMA,
 }
 
 for _name, _schema in CANONICAL_SCHEMAS.items():

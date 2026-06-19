@@ -73,6 +73,17 @@ pytest tests/test_features.py
 
 Outputs: `data/processed/features.parquet`, `data/processed/FEATURES.md`, `reports/figures/eda_feat_*`.
 
+## Evaluation harness (Plan 05)
+
+Shared scoring, calibration, walk-forward CV, and market benchmark:
+
+```bash
+python -m nlvswe.eval.backtest --model constant
+pytest tests/test_eval.py
+```
+
+Outputs: `data/processed/predictions_<model>.parquet`, `data/processed/eval_scores.parquet`, `reports/figures/calibration_*.png`.
+
 ## Layout
 
 ```
