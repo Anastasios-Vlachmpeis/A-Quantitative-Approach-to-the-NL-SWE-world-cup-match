@@ -10,13 +10,13 @@ import joblib
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from nlvswe.config import config_hash, get_config
+from nlvswe.config import config_hash, get_config, project_root
 from nlvswe.logging import get_logger
 from nlvswe.repro import git_commit, run_manifest
 
 logger = get_logger(__name__)
 
-_PROJECT_ROOT = Path(__file__).resolve().parents[2]
+_PROJECT_ROOT = project_root()
 _DATA_ROOT = _PROJECT_ROOT / "data"
 _MODELS_ROOT = _PROJECT_ROOT / "models"
 _FIGURES_ROOT = _PROJECT_ROOT / "reports" / "figures"
@@ -139,3 +139,49 @@ def save_figure(fig: plt.Figure, name: str) -> tuple[Path, Path]:
     fig.savefig(svg_path, bbox_inches="tight")
     logger.info("Saved figure -> %s, %s", png_path, svg_path)
     return png_path, svg_path
+
+
+def write_raw_artifact(
+    content: bytes,
+    dest_path: Path | str,
+    *,
+    source: str,
+    url: str,
+    license_note: str,
+    plan: str = "02",
+    params: dict[str, Any] | None = None,
+    row_count: int | None = None,
+    captured_at: str | None = None,
+    extra: dict[str, Any] | None = None,
+) -> Path:
+    """Write immutable raw bytes + manifest sidecar (Plan 02 contract)."""
+    dest_path = Path(dest_path)
+    dest_path.parent.mkdir(parents=True, exist_ok=True)
+    dest_path.write_bytes(content)
+
+    cfg = get_config()
+    manifest: dict[str, Any] = {
+        **run_manifest(plan, cfg.scope, row_count=row_count, config_hash=config_hash(cfg)),
+        "source": source,
+        "url": url,
+        "params": params or {},
+        "license": license_note,
+    }
+    if captured_at is not None:
+        manifest["captured_at"] = captured_at
+    if extra:
+        manifest.update(extra)
+
+    manifest_path = dest_path.with_suffix(dest_path.suffix + ".manifest.json")
+    manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True), encoding="utf-8")
+    logger.info("Wrote raw artifact %s (%d bytes) -> %s", source, len(content), dest_path)
+    return dest_path
+
+
+def read_raw_manifest(dest_path: Path | str) -> dict[str, Any]:
+    """Read manifest for a raw artifact path."""
+    dest_path = Path(dest_path)
+    manifest_path = dest_path.with_suffix(dest_path.suffix + ".manifest.json")
+    if not manifest_path.exists():
+        raise FileNotFoundError(f"Raw manifest not found: {manifest_path}")
+    return json.loads(manifest_path.read_text(encoding="utf-8"))

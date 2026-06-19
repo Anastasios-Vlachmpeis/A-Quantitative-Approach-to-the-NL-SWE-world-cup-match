@@ -39,16 +39,30 @@ data:
       fifa_rank:  "data/raw/intl/fifa_ranking"  # FIFA ranking history
       elo:        "data/raw/intl/elo"           # World Football Elo (eloratings)
       xg:         "data/raw/intl/xg"            # OPTIONAL (FBref via soccerdata)
+      endpoints:
+        results_base: "https://raw.githubusercontent.com/martj42/international_results/master"
+        fifa_ranking: "https://raw.githubusercontent.com/Dato-Futbol/fifa-ranking/refs/heads/master/ranking_fifa_historical.csv"
+        elo_world: "https://www.eloratings.net/World.tsv"
     club_odds:
       football_data: "data/raw/club_odds/football_data"  # football-data.co.uk
+      endpoints:
+        base_url: "https://www.football-data.co.uk/mmz4281"
+        leagues: ["E0", "SP1", "I1", "D1", "F1"]   # top-5 EU leagues for betting backtest
+        first_season_year: 2006                     # aligns with history_start
     odds_live:
       provider:    "the_odds_api"
       sport_key:   "soccer_fifa_world_cup"
       api_key_env: "ODDS_API_KEY"   # NAME of env var; never the key itself
       snapshot_dir: "data/raw/odds_live"        # timestamped pre-kickoff snapshots
+      endpoints:
+        base_url: "https://api.the-odds-api.com/v4"
     venues:
       fixtures:   "data/raw/venues/wc2026_fixtures.csv"  # curated venue+kickoff
       weather:    "data/raw/venues/weather"     # open-meteo historical (no key)
+      fixtures_template: "config/wc2026_fixtures.csv"
+      endpoints:
+        open_meteo_archive: "https://archive-api.open-meteo.com/v1/archive"
+        open_meteo_elevation: "https://api.open-meteo.com/v1/elevation"
 
   include_xg: false   # set true only if Plan 02 spike confirms adequate coverage
 

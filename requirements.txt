@@ -30,6 +30,7 @@ seaborn>=0.13
 
 # --- http / scraping ---
 requests>=2.31
+python-dotenv>=1.0    # load secrets (e.g. ODDS_API_KEY) from a gitignored .env
 
 # --- tooling ---
 joblib>=1.3            # model serialization

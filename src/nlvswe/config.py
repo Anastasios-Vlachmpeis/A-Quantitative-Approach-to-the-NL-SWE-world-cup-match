@@ -29,6 +29,14 @@ class DataCorpus(BaseModel):
     internationals_betting_sanity: bool
 
 
+class IntlEndpoints(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    results_base: str
+    fifa_ranking: str
+    elo_world: str
+
+
 class IntlSources(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -36,12 +44,28 @@ class IntlSources(BaseModel):
     fifa_rank: str
     elo: str
     xg: str
+    endpoints: IntlEndpoints
+
+
+class FootballDataEndpoints(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    base_url: str
+    leagues: list[str]
+    first_season_year: int
 
 
 class ClubOddsSources(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     football_data: str
+    endpoints: FootballDataEndpoints
+
+
+class OddsLiveEndpoints(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    base_url: str
 
 
 class OddsLiveSources(BaseModel):
@@ -51,6 +75,14 @@ class OddsLiveSources(BaseModel):
     sport_key: str
     api_key_env: str
     snapshot_dir: str
+    endpoints: OddsLiveEndpoints
+
+
+class VenuesEndpoints(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    open_meteo_archive: str
+    open_meteo_elevation: str
 
 
 class VenuesSources(BaseModel):
@@ -58,6 +90,8 @@ class VenuesSources(BaseModel):
 
     fixtures: str
     weather: str
+    fixtures_template: str
+    endpoints: VenuesEndpoints
 
 
 class DataSources(BaseModel):
@@ -140,8 +174,12 @@ class AppConfig(BaseModel):
     betting: BettingConfig
 
 
-def _project_root() -> Path:
+def project_root() -> Path:
     return Path(__file__).resolve().parents[2]
+
+
+def _project_root() -> Path:
+    return project_root()
 
 
 def load_config(path: str | Path | None = None) -> AppConfig:

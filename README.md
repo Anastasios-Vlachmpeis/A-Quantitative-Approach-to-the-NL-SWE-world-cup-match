@@ -33,6 +33,24 @@ pytest tests/test_foundation.py
 The dummy run writes `data/processed/dummy.parquet` and a manifest sidecar,
 proving the artifact pipeline works.
 
+## Data acquisition (Plan 02)
+
+Pull raw sources into `data/raw/` (gitignored). Each file gets a manifest sidecar.
+
+```bash
+# Individual sources
+python -m nlvswe.data.acquire --source results
+python -m nlvswe.data.acquire --source odds_history
+
+# All sources (requires ODDS_API_KEY env var for live odds)
+set ODDS_API_KEY=your_key_here   # Windows; never commit this
+python -m nlvswe.data.acquire --source all
+
+pytest tests/test_acquire.py
+```
+
+See `data/raw/SOURCES.md` for coverage notes from the validation spike.
+
 ## Layout
 
 ```
