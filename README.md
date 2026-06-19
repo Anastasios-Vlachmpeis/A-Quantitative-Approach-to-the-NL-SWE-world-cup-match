@@ -51,6 +51,17 @@ pytest tests/test_acquire.py
 
 See `data/raw/SOURCES.md` for coverage notes from the validation spike.
 
+## Cleaning (Plan 03)
+
+Build canonical interim tables from raw data:
+
+```bash
+python -m nlvswe.data.clean --table all
+pytest tests/test_clean.py
+```
+
+Outputs land in `data/interim/` with manifests; see `data/interim/VALIDATION.md`.
+
 ## Layout
 
 ```

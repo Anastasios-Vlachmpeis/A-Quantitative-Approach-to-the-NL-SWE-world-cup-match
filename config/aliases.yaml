@@ -1,0 +1,65 @@
+# Curated entity alias map (Plan 03). Keys are normalized via entities.normalize_name().
+# Values are stable team_id / venue_id slugs used in canonical tables.
+#
+# Extend this file when VALIDATION.md reports unresolved names.
+
+teams:
+  # Common exonyms / abbreviations
+  Holland: netherlands
+  NED: netherlands
+  SWE: sweden
+
+  # FIFA ranking name variants -> martj42 results canonical slug
+  Czechia: czech_republic
+  "Côte d'Ivoire": ivory_coast
+  "Cote d'Ivoire": ivory_coast
+  "C�te d'Ivoire": ivory_coast
+  "China PR": china
+  "Chinese Taipei": taiwan
+  "IR Iran": iran
+  "Korea Republic": south_korea
+  "Korea DPR": north_korea
+  "Congo DR": dr_congo
+  "Cabo Verde": cape_verde
+  "Cape Verde Islands": cape_verde
+  "Aotearoa New Zealand": new_zealand
+  "Brunei Darussalam": brunei
+  "Kyrgyz Republic": kyrgyzstan
+  "FYR Macedonia": north_macedonia
+  "Hong Kong, China": hong_kong
+  Swaziland: eswatini
+  "St Kitts and Nevis": saint_kitts_and_nevis
+  "St. Kitts and Nevis": saint_kitts_and_nevis
+  "St Lucia": saint_lucia
+  "St. Lucia": saint_lucia
+  "St Vincent and the Grenadines": saint_vincent_and_the_grenadines
+  "St. Vincent and the Grenadines": saint_vincent_and_the_grenadines
+  "St. Vincent / Grenadines": saint_vincent_and_the_grenadines
+  "Sao Tome e Principe": sao_tome_and_principe
+  "São Tomé e Príncipe": sao_tome_and_principe
+  "S�o Tom� e Pr�ncipe": sao_tome_and_principe
+  "Serbia and Montenegro": serbia
+  "Netherlands Antilles": netherlands
+  "American Samoa (unranked)": american_samoa
+  "Samoa (unranked)": samoa
+  "Eritrea (unranked)": eritrea
+  Türkiye: turkey
+  Turkiye: turkey
+  "Curaçao": curacao
+  "United States": usa
+  "United States of America": usa
+
+venues:
+  MetLife Stadium: metlife_stadium
+  SoFi Stadium: sofi_stadium
+  "AT&T Stadium": att_stadium
+  "Mercedes-Benz Stadium": mercedes_benz_stadium
+  "Hard Rock Stadium": hard_rock_stadium
+  "Lincoln Financial Field": lincoln_financial_field
+  "Levi's Stadium": levis_stadium
+  "Lumen Field": lumen_field
+  "BC Place": bc_place
+  "BMO Field": bmo_field
+  "Estadio Azteca": estadio_azteca
+  "Estadio BBVA": estadio_bbva
+  "Estadio Akron": estadio_akron
