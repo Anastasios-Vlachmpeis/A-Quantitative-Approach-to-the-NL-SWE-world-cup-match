@@ -1,0 +1,40 @@
+# NL vs SWE — Quantitative Analysis
+# Python 3.11+ . Install into a fresh virtualenv:  pip install -r requirements.txt
+# Version floors are conservative; bump as needed. Pin exact versions before the
+# pre-match freeze (Plan 10) for reproducibility.
+
+# --- data / IO ---
+pandas>=2.1
+numpy>=1.26
+pyarrow>=14.0          # parquet artifacts
+pyyaml>=6.0            # config loading
+python-dateutil>=2.8
+
+# --- validation ---
+pandera>=0.18          # dataframe schemas (canonical/feature tables)
+pydantic>=2.5          # config models
+
+# --- stats / modelling ---
+scipy>=1.11
+statsmodels>=0.14      # Poisson GLM (Poisson / Dixon-Coles family)
+scikit-learn>=1.4      # metrics + optional ML model
+pymc>=5.10             # Bayesian hierarchical model
+arviz>=0.17            # posterior diagnostics for pymc
+# NOTE (Windows): pymc relies on PyTensor and needs a working C/C++ toolchain
+# (e.g. the VS Build Tools or a conda-based install). If pip install is painful
+# on Windows, consider a conda env for pymc specifically.
+
+# --- plotting ---
+matplotlib>=3.8
+seaborn>=0.13
+
+# --- http / scraping ---
+requests>=2.31
+
+# --- tooling ---
+joblib>=1.3            # model serialization
+tqdm>=4.66             # progress bars for walk-forward loops
+pytest>=8.0            # tests
+
+# --- OPTIONAL: enable only if Plan 02 spike confirms xG coverage ---
+# soccerdata>=1.8      # FBref / understat scraping for xG

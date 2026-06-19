@@ -1,0 +1,45 @@
+# NL vs SWE — Quantitative Analysis
+
+Quantitative research project predicting the **FIFA World Cup 2026** match
+**Netherlands vs Sweden**, pricing betting markets against bookmaker odds, and
+recommending a staking strategy on a mock $1,000 bankroll.
+
+## Framing
+
+- The single match is **N=1** — it cannot validate a model. Statistical evidence
+  comes from a **walk-forward backtest** over historical matches.
+- The live match is a **pre-registered showcase**: predictions and bets are frozen
+  (git-tagged `prematch-freeze`) before kickoff.
+- **Closing Line Value (CLV)** is the headline KPI for betting, not one-bet profit.
+
+## Setup
+
+Requires **Python 3.11+**.
+
+```bash
+python -m venv .venv
+.venv\Scripts\activate          # Windows
+# source .venv/bin/activate     # macOS/Linux
+pip install -e .
+```
+
+## Quick check (Plan 01)
+
+```bash
+python -m nlvswe._dummy
+pytest tests/test_foundation.py
+```
+
+The dummy run writes `data/processed/dummy.parquet` and a manifest sidecar,
+proving the artifact pipeline works.
+
+## Layout
+
+```
+config/config.yaml     # single source of truth
+src/nlvswe/            # all logic lives here
+data/raw|interim|processed/   # artifacts (gitignored except .gitkeep)
+plans/                 # build plans (read 00-overview first)
+```
+
+See `plans/README.txt` for the full build order (Phases 01–11).

@@ -1,0 +1,141 @@
+"""Artifact read/write helpers with manifest sidecars."""
+
+from __future__ import annotations
+
+import json
+from pathlib import Path
+from typing import Any
+
+import joblib
+import matplotlib.pyplot as plt
+import pandas as pd
+
+from nlvswe.config import config_hash, get_config
+from nlvswe.logging import get_logger
+from nlvswe.repro import git_commit, run_manifest
+
+logger = get_logger(__name__)
+
+_PROJECT_ROOT = Path(__file__).resolve().parents[2]
+_DATA_ROOT = _PROJECT_ROOT / "data"
+_MODELS_ROOT = _PROJECT_ROOT / "models"
+_FIGURES_ROOT = _PROJECT_ROOT / "reports" / "figures"
+
+
+def _artifact_dir(subdir: str) -> Path:
+    path = _DATA_ROOT / subdir
+    path.mkdir(parents=True, exist_ok=True)
+    return path
+
+
+def _table_paths(name: str, subdir: str) -> tuple[Path, Path]:
+    base = _artifact_dir(subdir)
+    return base / f"{name}.parquet", base / f"{name}.manifest.json"
+
+
+def write_table(
+    df: pd.DataFrame,
+    name: str,
+    subdir: str,
+    *,
+    sort_by: list[str] | str | None = None,
+    plan: str = "01",
+    schema_name: str | None = None,
+) -> Path:
+    """Write parquet + manifest sidecar. Sorts deterministically before write."""
+    parquet_path, manifest_path = _table_paths(name, subdir)
+    out = df.copy()
+    if sort_by is not None:
+        keys = [sort_by] if isinstance(sort_by, str) else list(sort_by)
+        out = out.sort_values(keys, kind="mergesort").reset_index(drop=True)
+
+    cfg = get_config()
+    manifest = run_manifest(
+        plan,
+        cfg.scope,
+        row_count=len(out),
+        schema_name=schema_name or name,
+        config_hash=config_hash(cfg),
+    )
+
+    out.to_parquet(parquet_path, index=False, compression="snappy")
+    manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True), encoding="utf-8")
+    logger.info("Wrote table %s (%d rows) -> %s", name, len(out), parquet_path)
+    return parquet_path
+
+
+def read_table(name: str, subdir: str) -> pd.DataFrame:
+    """Read parquet; warn if manifest git_commit differs from current."""
+    parquet_path, manifest_path = _table_paths(name, subdir)
+    if not parquet_path.exists():
+        raise FileNotFoundError(f"Table not found: {parquet_path}")
+    if not manifest_path.exists():
+        raise FileNotFoundError(f"Manifest not found: {manifest_path}")
+
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    stored_commit = manifest.get("git_commit")
+    current_commit = git_commit()
+    if stored_commit and stored_commit != current_commit:
+        logger.warning(
+            "Manifest git_commit (%s) differs from current (%s); artifact may be stale.",
+            stored_commit,
+            current_commit,
+        )
+
+    return pd.read_parquet(parquet_path)
+
+
+def write_json(obj: Any, name: str, subdir: str, *, plan: str = "01") -> Path:
+    """Write JSON artifact with manifest sidecar under data/<subdir>."""
+    base = _artifact_dir(subdir)
+    json_path = base / f"{name}.json"
+    manifest_path = base / f"{name}.manifest.json"
+
+    cfg = get_config()
+    manifest = run_manifest(plan, cfg.scope, config_hash=config_hash(cfg))
+
+    json_path.write_text(json.dumps(obj, indent=2, sort_keys=True, default=str), encoding="utf-8")
+    manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True), encoding="utf-8")
+    return json_path
+
+
+def read_json(name: str, subdir: str) -> Any:
+    """Read JSON artifact from data/<subdir>."""
+    json_path = _artifact_dir(subdir) / f"{name}.json"
+    if not json_path.exists():
+        raise FileNotFoundError(f"JSON not found: {json_path}")
+    return json.loads(json_path.read_text(encoding="utf-8"))
+
+
+def save_model(model: Any, name: str) -> Path:
+    """Serialize model to models/<name>.joblib."""
+    _MODELS_ROOT.mkdir(parents=True, exist_ok=True)
+    path = _MODELS_ROOT / f"{name}.joblib"
+    joblib.dump(model, path)
+    logger.info("Saved model -> %s", path)
+    return path
+
+
+def load_model(name: str) -> Any:
+    """Load model from models/<name>.joblib."""
+    path = _MODELS_ROOT / f"{name}.joblib"
+    if not path.exists():
+        raise FileNotFoundError(f"Model not found: {path}")
+    return joblib.load(path)
+
+
+def figure_path(name: str) -> Path:
+    """Return path under reports/figures/ (without extension)."""
+    _FIGURES_ROOT.mkdir(parents=True, exist_ok=True)
+    return _FIGURES_ROOT / name
+
+
+def save_figure(fig: plt.Figure, name: str) -> tuple[Path, Path]:
+    """Save figure as PNG and SVG."""
+    base = figure_path(name)
+    png_path = base.with_suffix(".png")
+    svg_path = base.with_suffix(".svg")
+    fig.savefig(png_path, bbox_inches="tight", dpi=150)
+    fig.savefig(svg_path, bbox_inches="tight")
+    logger.info("Saved figure -> %s, %s", png_path, svg_path)
+    return png_path, svg_path

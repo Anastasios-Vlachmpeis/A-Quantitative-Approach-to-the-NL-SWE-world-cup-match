@@ -1,0 +1,93 @@
+# =============================================================================
+# NL vs SWE — Quantitative Analysis : single source of truth
+# Loaded + validated by src/nlvswe/config.py (pydantic). Unknown keys -> error.
+# Secrets are NEVER stored here: only the NAME of the env var holding them.
+# =============================================================================
+
+seed: 20260619          # global seed (python/numpy/pymc). See repro.set_seeds.
+scope: history          # "history" (walk-forward backtest) | "live" (the match)
+
+# ---------------------------------------------------------------------------
+# The match we are predicting (scope=live applies the pipeline here once)
+# ---------------------------------------------------------------------------
+target_match:
+  home: "Netherlands"
+  away: "Sweden"
+  competition: "FIFA World Cup"
+  season: 2026
+  kickoff_utc: null     # FILL IN once known (ISO 8601, e.g. "2026-06-2xT..Z").
+                        # Used as the as_of for live features + closing-line cutoff.
+
+# ---------------------------------------------------------------------------
+# Data
+# ---------------------------------------------------------------------------
+data:
+  history_start: "2006-01-01"   # backtest window start (DECISION: see Plan 02 §6)
+
+  # Backtest corpus split — RESOLVED Hybrid (Plan 02 §6). Machine-readable so code
+  # can route data correctly. Goal models train/eval on internationals; betting
+  # machinery is validated on club odds. The two are NEVER merged.
+  corpus:
+    model_eval: "internationals"
+    betting_validation: "club_odds"
+    internationals_betting_sanity: false   # flip true only if intl odds sourced
+
+  # Raw namespaces (kept separate on disk; see Plan 02 acquisition impact)
+  sources:
+    intl:
+      results:    "data/raw/intl/results"       # martj42 international results
+      fifa_rank:  "data/raw/intl/fifa_ranking"  # FIFA ranking history
+      elo:        "data/raw/intl/elo"           # World Football Elo (eloratings)
+      xg:         "data/raw/intl/xg"            # OPTIONAL (FBref via soccerdata)
+    club_odds:
+      football_data: "data/raw/club_odds/football_data"  # football-data.co.uk
+    odds_live:
+      provider:    "the_odds_api"
+      sport_key:   "soccer_fifa_world_cup"
+      api_key_env: "ODDS_API_KEY"   # NAME of env var; never the key itself
+      snapshot_dir: "data/raw/odds_live"        # timestamped pre-kickoff snapshots
+    venues:
+      fixtures:   "data/raw/venues/wc2026_fixtures.csv"  # curated venue+kickoff
+      weather:    "data/raw/venues/weather"     # open-meteo historical (no key)
+
+  include_xg: false   # set true only if Plan 02 spike confirms adequate coverage
+
+# ---------------------------------------------------------------------------
+# Models  (the ladder — Plan 06)
+# ---------------------------------------------------------------------------
+model:
+  max_goals: 10                  # scoreline matrix is (max_goals+1)^2
+  time_decay_half_life_days: 365 # Dixon-Coles exponential down-weighting
+  form_windows: [5, 10]          # rolling form K's (Plan 04 features)
+  refit_every: 10                # walk-forward: refit every N matches (speed vs acc)
+  mc_samples: 10000              # Monte Carlo draws for induction/visuals (Plan 07)
+  bayesian:
+    draws: 1000
+    tune: 1000
+    chains: 4
+    target_accept: 0.9
+
+# ---------------------------------------------------------------------------
+# Evaluation harness  (Plan 05)
+# ---------------------------------------------------------------------------
+eval:
+  cv_window: "expanding"   # "expanding" (default) | "rolling"
+  min_history_matches: 100 # don't predict a match until this much prior data
+  bootstrap_samples: 2000  # CIs on scores
+  calibration_bins: 10
+
+# ---------------------------------------------------------------------------
+# Betting strategy  (Plans 07 / 09)
+# ---------------------------------------------------------------------------
+betting:
+  bankroll: 1000.0
+  kelly_fraction: 0.25        # fractional Kelly (hedge against model error)
+  max_stake_fraction: 0.05    # hard cap on any single bet as frac of bankroll
+  min_edge: 0.02              # only bet if model_prob*odds - 1 > this
+  devig_method: "multiplicative"   # "multiplicative" | "shin"
+  flat_stake_control: true    # also run a flat-stake variant as a control
+  bookmakers: ["pinnacle", "bet365", "williamhill"]  # adjust to what's available
+  markets:
+    totals_lines: [0.5, 1.5, 2.5, 3.5, 4.5]
+    ah_lines: [-1.0, -0.5, 0.0, 0.5, 1.0]
+    correct_score_top_n: 10   # top-N exact scores + an "other" bucket
