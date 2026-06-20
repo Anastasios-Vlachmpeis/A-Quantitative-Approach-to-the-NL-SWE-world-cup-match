@@ -1,1 +1,1 @@
-"""Betting: induction, EV, Kelly, CLV (Plans 07–09)."""
+"""Betting: induction, EV, Kelly, CLV, strategy backtest."""

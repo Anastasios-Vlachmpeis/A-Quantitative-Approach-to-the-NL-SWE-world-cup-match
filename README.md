@@ -1,8 +1,8 @@
-# NL vs SWE — Quantitative Analysis
+# A Quantitative Analysis of the NL vs SWE match + Betting Strategy
 
 Quantitative research project predicting the **FIFA World Cup 2026** match
 **Netherlands vs Sweden**, pricing betting markets against bookmaker odds, and
-recommending a staking strategy on a mock $1,000 bankroll.
+recommending a staking strategy (based on 'mock' $1000 account)
 
 ## Framing
 
