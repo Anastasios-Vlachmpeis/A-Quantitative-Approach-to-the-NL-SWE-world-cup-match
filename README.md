@@ -84,6 +84,18 @@ pytest tests/test_eval.py
 
 Outputs: `data/processed/predictions_<model>.parquet`, `data/processed/eval_scores.parquet`, `reports/figures/calibration_*.png`.
 
+## Models (Plan 06)
+
+International-only model ladder with walk-forward backtest:
+
+```bash
+python -m nlvswe.models.run --model baseline
+python -m nlvswe.models.run --model all
+pytest tests/test_models.py
+```
+
+See `models/MODELS.md` for assumptions and limitations. Outputs: `data/processed/predictions_<model>.parquet`.
+
 ## Layout
 
 ```
