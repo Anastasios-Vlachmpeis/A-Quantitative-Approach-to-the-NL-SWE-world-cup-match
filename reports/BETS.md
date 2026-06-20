@@ -1,4 +1,4 @@
-# Bet Ticket — Netherlands vs Sweden (FIFA World Cup 2026)
+# Bet Ticket ~ Netherlands vs Sweden (FIFA World Cup 2026)
 
 **Kickoff:** 2026-06-20 17:00 UTC · **Mock bankroll:** $1,000 · **Model:** `ensemble_weighted` (1X2) / `poisson` scoreline
 **Staking:** fractional Kelly (¼) for value bets; de-vig method: multiplicative
