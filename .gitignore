@@ -13,7 +13,8 @@ venv/
 # Project artifacts (large / generated; dirs kept via .gitkeep)
 data/
 models/
-reports/figures/
+# reports/figures/ is tracked: the figures are report assets and must be
+# committed so the markdown in reports/ renders on GitHub.
 
 # IDE / OS
 .idea/
